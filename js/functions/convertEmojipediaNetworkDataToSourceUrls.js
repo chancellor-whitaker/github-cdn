@@ -1,4 +1,4 @@
-export default function emojipediaNetworkDataToSourceUrls(data) {
+export const convertEmojipediaNetworkDataToSourceUrls = (data) => {
   const urls = !data ? [] : data.log.entries.map((e) => e.request.url);
 
   const webpUrls = urls.filter(
@@ -12,4 +12,4 @@ export default function emojipediaNetworkDataToSourceUrls(data) {
   );
 
   return [...new Set(pngUrls)];
-}
+};
