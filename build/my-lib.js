@@ -3073,11 +3073,12 @@ async function f(e, t = {}) {
 	let o = await i.generateAsync({ type: "blob" }), s = document.createElement("a");
 	s.href = URL.createObjectURL(o), s.download = n, s.click();
 }
-//#endregion
-//#region lib/main.js
-var p = { emojipedia: { js: {
-	extractNetworkPngUrls: u,
-	downloadZipFromUrls: f
-} } };
+var p = {
+	emojipedia: { js: {
+		extractNetworkPngUrls: u,
+		downloadZipFromUrls: f
+	} },
+	math: { sum: (e) => e.reduce((e, t) => e + t, 0) }
+};
 //#endregion
 export { p as _ };

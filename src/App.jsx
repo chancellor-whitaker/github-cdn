@@ -1,6 +1,11 @@
-// import { cdn } from "https://cdn.jsdelivr.net/gh/chancellor-whitaker/github-cdn@latest/static/my-lib.js";
+// import { _ } from "https://cdn.jsdelivr.net/gh/chancellor-whitaker/github-cdn@master/build/my-lib.js";
 
-import downloadZipFromUrls from "../lib/emojipedia/js/downloadZipFromUrls";
+import { _ } from "https://spring-sky-8320.chancellor-whitaker.workers.dev/";
+
+const { downloadZipFromUrls } = _;
+
+console.log(_);
+
 import useData from "./hooks/useData";
 
 const vendor = "whatsapp";
