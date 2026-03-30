@@ -24,7 +24,7 @@ export default defineConfig({
       fileName: "my-lib",
       name: "MyLib",
     },
-    outDir: "docs",
+    outDir: "build",
   },
   plugins: [react()],
 });

@@ -13,13 +13,13 @@ var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescr
 	throw Error("Calling `require` for \"" + e + "\" in an environment that doesn't expose the `require` function. See https://rolldown.rs/in-depth/bundling-cjs#require-external-modules for more details.");
 });
 //#endregion
-//#region lib/js/emojipedia/networkTabDataToUrls.js
+//#region lib/emojipedia/js/extractNetworkPngUrls.js
 function u(e) {
 	let t = (e ? e.log.entries.map((e) => e.request.url) : []).filter((e) => e.endsWith(".webp") && e.startsWith("https://em-content.zobj.net/thumbs/60")).map((e) => e.replace("thumbs/60", "source").replace(".webp", ".png"));
 	return [...new Set(t)];
 }
 //#endregion
-//#region lib/js/emojipedia/downloadZipFromUrls.js
+//#region lib/emojipedia/js/downloadZipFromUrls.js
 var d = /* @__PURE__ */ c((/* @__PURE__ */ o(((e, t) => {
 	(function(n) {
 		typeof e == "object" && t !== void 0 ? t.exports = n() : typeof define == "function" && define.amd ? define([], n) : (typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : this).JSZip = n();
@@ -3075,9 +3075,9 @@ async function f(e, t = {}) {
 }
 //#endregion
 //#region lib/main.js
-var p = { js: { emojipedia: {
-	networkTabDataToUrls: u,
+var p = { emojipedia: { js: {
+	extractNetworkPngUrls: u,
 	downloadZipFromUrls: f
 } } };
 //#endregion
-export { p as cdn };
+export { p as _ };
