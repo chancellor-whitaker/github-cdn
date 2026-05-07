@@ -13,13 +13,60 @@ var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescr
 	throw Error("Calling `require` for \"" + e + "\" in an environment that doesn't expose the `require` function. See https://rolldown.rs/in-depth/bundling-cjs#require-external-modules for more details.");
 });
 //#endregion
-//#region lib/emojipedia/js/extractNetworkPngUrls.js
-function u(e) {
-	let t = (e ? e.log.entries.map((e) => e.request.url) : []).filter((e) => e.endsWith(".webp") && e.startsWith("https://em-content.zobj.net/thumbs/60")).map((e) => e.replace("thumbs/60", "source").replace(".webp", ".png"));
-	return [...new Set(t)];
+//#region lib/js/getAllUrlsFromPages.js
+async function u(e, t = {}) {
+	let { proxyBase: n = "https://proxy.williesleepy.workers.dev", includeDataSrc: r = !0, includeSrcset: i = !0, concurrency: a = 5, useProxy: o = !0 } = t, s = /* @__PURE__ */ new Set();
+	async function c(e, t) {
+		let n = 0, r = 0;
+		return new Promise((i) => {
+			function a() {
+				if (r === e.length && n === 0) return i();
+				for (; n < t && r < e.length;) {
+					let t = e[r++];
+					n++, t().catch((e) => {
+						console.error("Task failed:", e);
+					}).finally(() => {
+						n--, a();
+					});
+				}
+			}
+			a();
+		});
+	}
+	async function l(e) {
+		try {
+			let t = o ? `${n}?url=${encodeURIComponent(e)}` : e, a = await fetch(t);
+			if (!a.ok) throw Error(`Failed to fetch page: ${a.status}`);
+			let s = await a.text(), c = new DOMParser().parseFromString(s, "text/html"), l = c.querySelector("base")?.href || e, u = /* @__PURE__ */ new Set();
+			function d(e) {
+				if (!(!e || e.startsWith("javascript:") || e.startsWith("mailto:") || e.startsWith("data:"))) try {
+					let t = new URL(e, l).href;
+					u.add(t);
+				} catch {}
+			}
+			return ["href", "src"].forEach((e) => {
+				c.querySelectorAll(`[${e}]`).forEach((t) => {
+					d(t.getAttribute(e));
+				});
+			}), r && c.querySelectorAll("[data-src]").forEach((e) => {
+				d(e.getAttribute("data-src"));
+			}), i && c.querySelectorAll("[srcset]").forEach((e) => {
+				let t = e.getAttribute("srcset");
+				t && t.split(",").forEach((e) => {
+					let t = e.trim().split(" ")[0];
+					d(t);
+				});
+			}), u;
+		} catch (t) {
+			return console.error("Failed to extract URLs from:", e, t), /* @__PURE__ */ new Set();
+		}
+	}
+	return await c(e.map((e) => async () => {
+		(await l(e)).forEach((e) => s.add(e));
+	}), a), Array.from(s);
 }
 //#endregion
-//#region lib/emojipedia/js/downloadZipFromUrls.js
+//#region lib/js/downloadZipFromUrls.js
 var d = /* @__PURE__ */ c((/* @__PURE__ */ o(((e, t) => {
 	(function(n) {
 		typeof e == "object" && t !== void 0 ? t.exports = n() : typeof define == "function" && define.amd ? define([], n) : (typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : this).JSZip = n();
@@ -3050,8 +3097,25 @@ while (r === s[++i] && r === s[++i] && r === s[++i] && r === s[++i] && r === s[+
 	});
 })))(), 1);
 async function f(e, t = {}) {
-	let { zipName: n = "download.zip", concurrency: r = 5 } = t, i = new d.default();
-	async function a(e, t) {
+	let { proxyBase: n = "https://proxy.williesleepy.workers.dev", zipName: r = "download.zip", concurrency: i = 5, useProxy: a = !0 } = t, o = new d.default(), s = /* @__PURE__ */ new Map();
+	function c(e, t) {
+		let n = e || `file_${t}`;
+		if (!s.has(n)) return s.set(n, 0), n;
+		let r = n.match(/(\.[^.]*)$/), i = r ? n.slice(0, -r[1].length) : n, a = r ? r[1] : "", o = s.get(n) + 1, c;
+		do
+			c = `${i} (${o})${a}`, o++;
+		while (s.has(c));
+		return s.set(n, o - 1), s.set(c, 0), c;
+	}
+	function l(e, t) {
+		try {
+			let { hostname: n, pathname: r } = new URL(e), i = r.replace(/^\/+/, "").replace(/\//g, "-"), a = r.match(/\.(png|jpg|jpeg|gif|webp|svg|mp4|webm|css|js)(?=\/|$)/i), o = a ? a[0] : "";
+			return o && !i.endsWith(o) && (i += o), i || `file_${t}${o || ""}`;
+		} catch {
+			return `file_${t}`;
+		}
+	}
+	async function u(e, t) {
 		let n = 0, r = 0;
 		return new Promise((i) => {
 			function a() {
@@ -3066,19 +3130,24 @@ async function f(e, t = {}) {
 			a();
 		});
 	}
-	await a(e.map((e, t) => async () => {
-		let n = await (await fetch(e)).arrayBuffer(), r = e.split("/").pop() || `file_${t}.png`;
-		i.file(r, n);
-	}), r);
-	let o = await i.generateAsync({ type: "blob" }), s = document.createElement("a");
-	s.href = URL.createObjectURL(o), s.download = n, s.click();
+	await u(e.map((e, t) => async () => {
+		try {
+			let r = a ? `${n}?url=${encodeURIComponent(e)}` : e, i = await fetch(r);
+			if (!i.ok) throw Error(`Failed: ${i.status}`);
+			let s = await i.arrayBuffer(), u = c(l(e, t), t);
+			o.file(u, s);
+		} catch (t) {
+			console.error("Download failed:", e, t);
+		}
+	}), i);
+	let f = await o.generateAsync({ type: "blob" }), p = document.createElement("a");
+	p.href = URL.createObjectURL(f), p.download = r, p.click();
 }
-var p = {
-	emojipedia: { js: {
-		extractNetworkPngUrls: u,
-		downloadZipFromUrls: f
-	} },
-	math: { sum: (e) => e.reduce((e, t) => e + t, 0) }
-};
+//#endregion
+//#region lib/main.js
+var p = { js: {
+	getAllUrlsFromPages: u,
+	downloadZipFromUrls: f
+} };
 //#endregion
 export { p as _ };
